@@ -3,7 +3,7 @@ m3d.py
 Module for controlling the M3D printer over a serial port
 Uses gcode commands to control the printer
 Author: Greg d'Eon
-Date: May 2, 2016
+Date: May 2-3, 2016
 '''
 
 '''
@@ -131,7 +131,25 @@ class M3D(object):
 	
 	
 	# Movement functions 	
-	def move(self, x = 0, y = 0, z = 0):
+	def __sendCommand(self, command):
+		"""
+		Sends the string "command" to the printer.
+		Blocks until an "ok" reply comes back.
+		
+		Args:
+			command (string): the command to be sent
+		"""
+		
+		# Make sure we're not sitting on any data and send the command
+		self.serialPort.reset_input_buffer()
+		self.serialPort.write(command)
+		
+		# Wait until a reply comes back
+		while(self.serialPort.in_waiting == 0):
+			pass
+		
+		
+ 	def move(self, x = 0, y = 0, z = 0):
 		"""
 		Moves the printer head to the position (x, y, z)
 		
@@ -139,9 +157,8 @@ class M3D(object):
 			x, y, z (number): coordinates
 		"""
 		
-		# Build the command string
-		command = "G0 X" + str(x) + " Y" + str(y) + " Z" + str(z) + " S1"
-		self.serialPort.write(command)
+		# Use G0 to move
+		self.__sendCommand("G0 X" + str(x) + " Y" + str(y) + " Z" + str(z) + " S1")
 	
 		
 	def stop(self):
@@ -149,8 +166,8 @@ class M3D(object):
 		Performs an emergency stop
 		"""
 		
-		# Stop
-		self.serialPort.write("M0")
+		# Use M0 to stop
+		self.__sendCommand("M0")
 		
 		
 	def wait(self, ms):
@@ -161,9 +178,8 @@ class M3D(object):
 			ms (integer): amount of time to wait, in milliseconds
 		"""
 		
-		# Wait for some time
-		command = "G4 P" + str(ms)
-		self.serialPort.write(command)
+		# Wait for some time with G4
+		self.__sendCommand("G4 P" + str(ms))
 		
 		
 	def setAbsolute(self):
@@ -171,8 +187,8 @@ class M3D(object):
 		Puts the printer head in absolute coordinate mode
 		"""
 		
-		# Set up absolute mode
-		self.serialPort.write("G90")
+		# Use G90 to switch to absolute mode
+		self.__sendCommand("G90")
 		
 		
 	def setRelative(self):
@@ -180,10 +196,11 @@ class M3D(object):
 		Puts the printer head in relative coordinate mode
 		"""
 		
-		# Set up absolute mode
-		self.serialPort.write("G91")
+		# Use G91 to switch to relative mode
+		self.__sendCommand("G91")
 	
 
+	
 """
 Example code to control the printer
 """

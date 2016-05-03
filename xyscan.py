@@ -25,13 +25,13 @@ printer = M3D()
 printer.start("COM4")
 printer.setRelative()
 
-printer.move(0, -10)
+printer.move(0, 0)
 
 for y in range (y_steps+1):
 	for x in range (x_steps+1):
 		# Scan here
 		print "x = {0:d}; y = {1:d}".format(x, y)
-		time.sleep(1)
+		time.sleep(0.1)
 		
 		# Move in x
 		if x == x_steps:
