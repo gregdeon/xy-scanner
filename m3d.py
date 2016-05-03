@@ -6,9 +6,6 @@ Author: Greg d'Eon
 Date: May 2, 2016
 '''
 
-import serial
-import time
-
 '''
 Some of the most important gcode commands:
 G0 [Xnnn] [Ynnn] [Znnn] 
@@ -36,155 +33,174 @@ Potential improvements:
   system (G92) but they don't appear to work on the M3D printer.
 '''
 
-# Module variables
-serialPort = None		# The serial port we're using
+import serial
+import time
 
+class M3D(object):
+	# Constructor/destructor
+	def __init__(self):
+		self.serialPort = None
 
-# ------------------------------------------------------------------------------
-# Setup functions 
-# ------------------------------------------------------------------------------
-def start(port):
-	"""
-	Attempts to set up the M3D printer.
-
-	Args:
-		port (string): the COM port to be used (ex: "COM4")
-	Returns:
-		true if the printer is set up; otherwise false
-	"""
-	
-	baud = 115200
-	if not connect(port, baud):
-		print "Could not connect to printer."
-		return False
+	def dis(self):
+		self.__disconnect()
+		del self.serialPort
 		
-	if not switchToFirmware():
-		print "Could not switch to firmware mode."
-		return False
+	# Setup functions
+	def start(self, port):
+		"""
+		Attempts to set up the M3D printer.
 	
-	return True
-
-
-def connect(port, baud):
-	"""
-	Opens a serial connection with the M3D printer.
-	
-	Args:
-		port: the COM port to be used (ex: "COM4")
-		baud: the baudrate to be used (ex: 115200)
-	Returns:
-		true if the serial port was successfully opened; otherwise false
-	"""
-	
-	global serialPort
-	
-	# Try to connect to port
-	try:
-		serialPort = serial.Serial(port, baud)
-	except serial.SerialException as ex:
-		print "Port is unavailable"
-		serialPort = None
-		return False
-	
-	return True
-
-
-def switchToFirmware():
-	"""
-	Attempts to switch the printer into firmware mode.
-	
-	Returns:
-		true if the switch was successful; otherwise false
-	"""
-	
-	global serialPort
-	
-	# Fail if the serial port isn't opened
-	if serialPort == None:
-		return False
+		Args:
+			port (string): the COM port to be used (ex: "COM4")
+		Returns:
+			true if the printer is set up; otherwise false
+		"""
 		
-	# Tell the printer to switch to firmware mode
-	serialPort.write("Q")
-	time.sleep(0.5)
+		baud = 115200
+		if not self.__connect(port, baud):
+			print "Could not connect to printer."
+			return False
+			
+		if not self.__switchToFirmware():
+			print "Could not switch to firmware mode."
+			return False
+		
+		return True
 	
-	# Attempt to reconnect to the printer
-	try:
-		serialPort.close()
+	
+	def __connect(self, port, baud):
+		"""
+		Opens a serial connection with the M3D printer.
+		
+		Args:
+			port: the COM port to be used (ex: "COM4")
+			baud: the baudrate to be used (ex: 115200)
+		Returns:
+			true if the serial port was successfully opened; otherwise false
+		"""
+		
+		# Try to connect to port
+		try:
+			self.serialPort = serial.Serial(port, baud)
+		except serial.SerialException as ex:
+			print "Port is unavailable"
+			self.serialPort = None
+			return False
+		
+		return True
+	
+	
+	def __switchToFirmware(self):
+		"""
+		Attempts to switch the printer into firmware mode.
+		
+		Returns:
+			true if the switch was successful; otherwise false
+		"""
+		
+		# Fail if the serial port isn't opened
+		if self.serialPort == None:
+			return False
+			
+		# Tell the printer to switch to firmware mode
+		self.serialPort.write("Q")
 		time.sleep(0.5)
-		serialPort.open()
-	except serial.SerialException as ex:
-		# Failed to reconnect
-		return False
+		
+		# Attempt to reconnect to the printer
+		try:
+			self.serialPort.close()
+			time.sleep(0.5)
+			self.serialPort.open()
+		except serial.SerialException as ex:
+			# Failed to reconnect
+			return False
+		
+		# All is well!
+		return True
 	
-	# All is well!
-	return True
+		
+	def __disconnect(self):
+		"""
+		Closes the serial connection.
+		"""
+		
+		if self.serialPort != None:
+			self.serialPort.close()
+			self.serialPort = None
+	
+	
+	
+	# Movement functions 	
+	def move(self, x = 0, y = 0, z = 0):
+		"""
+		Moves the printer head to the position (x, y, z)
+		
+		Args:
+			x, y, z (number): coordinates
+		"""
+		
+		# Build the command string
+		command = "G0 X" + str(x) + " Y" + str(y) + " Z" + str(z) + " S1"
+		self.serialPort.write(command)
+	
+		
+	def stop(self):
+		"""
+		Performs an emergency stop
+		"""
+		
+		# Stop
+		self.serialPort.write("M0")
+		
+		
+	def wait(self, ms):
+		"""
+		Waits in place for a fixed amount of time
+		
+		Args:
+			ms (integer): amount of time to wait, in milliseconds
+		"""
+		
+		# Wait for some time
+		command = "G4 P" + str(ms)
+		self.serialPort.write(command)
+		
+		
+	def setAbsolute(self):
+		"""
+		Puts the printer head in absolute coordinate mode
+		"""
+		
+		# Set up absolute mode
+		self.serialPort.write("G90")
+		
+		
+	def setRelative(self):
+		"""
+		Puts the printer head in relative coordinate mode
+		"""
+		
+		# Set up absolute mode
+		self.serialPort.write("G91")
+	
 
+"""
+Example code to control the printer
+"""
+if __name__ == '__main__':
+	test = M3D()
 	
-def disconnect():
-	"""
-	Closes the serial connection.
-	"""
+	print "Setting up..."
+	test.start("COM4")
 	
-	global serialPort
+	print "Testing movement..."
+	test.setRelative()
+	test.move( 10,  10, 0)
+	test.move(-10,   0, 0)
+	test.move(  0,  10, 0)
+	test.wait(500)
+	test.move(  0,  -20, 1)
 	
-	if serialPort != None:
-		serialPort.close()
-		serialPort = None
-
-
-
-# ------------------------------------------------------------------------------
-# Movement functions 
-# ------------------------------------------------------------------------------		
-def move(x = 0, y = 0, z = 0):
-	"""
-	Moves the printer head to the position (x, y, z)
-	
-	Args:
-		x, y, z (number): coordinates
-	"""
-	
-	# Build the command string
-	command = "G0 X" + str(x) + " Y" + str(y) + " Z" + str(z) + " S1"
-	serialPort.write(command)
-
-	
-def stop():
-	"""
-	Performs an emergency stop
-	"""
-	
-	# Stop
-	serialPort.write("M0")
-	
-	
-def wait(ms):
-	"""
-	Waits in place for a fixed amount of time
-	
-	Args:
-		ms (integer): amount of time to wait, in milliseconds
-	"""
-	
-	# Wait for some time
-	command = "G4 P" + str(ms)
-	serialPort.write(command)
-	
-	
-def setAbsolute():
-	"""
-	Puts the printer head in absolute coordinate mode
-	"""
-	
-	# Set up absolute mode
-	serialPort.write("G90")
-	
-	
-def setRelative():
-	"""
-	Puts the printer head in relative coordinate mode
-	"""
-	
-	# Set up absolute mode
-	serialPort.write("G91")
+	print "Tearing down..."
+	# Happens automatically
 	
