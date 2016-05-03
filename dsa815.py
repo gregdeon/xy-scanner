@@ -125,7 +125,6 @@ class DSA815(object):
 		Measure a single trace from the spectrum analyzer.
 		
 		Returns:
-			List of frequencies used to measure
 			List of amplitudes in dBm at each frequency measured
 		"""
 		
@@ -144,17 +143,16 @@ class DSA815(object):
 		
 		# Ask for data and process it
 		dataString = self.inst.query(":TRACE:DATA? TRACE1")
-		#dataString = self.inst.query(":FETCH?")
 		dataList = dataString.split(", ")
 		dataList[0] = dataList[0].split()[1]
 		amplitudes = [float(i) for i in dataList]
 		
 		# Also, find the frequencies
-		f_min = int(self.inst.query(":SENSE:FREQ:START?"))
-		f_max = int(self.inst.query(":SENSE:FREQ:STOP?"))
-		freq = numpy.linspace(f_min, f_max, len(amplitudes))
+		#f_min = int(self.inst.query(":SENSE:FREQ:START?"))
+		#f_max = int(self.inst.query(":SENSE:FREQ:STOP?"))
+		#freq = numpy.linspace(f_min, f_max, len(amplitudes))
 
-		return freq, amplitudes
+		return amplitudes
 
 
 		
