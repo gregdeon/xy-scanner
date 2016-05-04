@@ -4,15 +4,8 @@ Controls a DSA815 spectrum analyzer.
 Adapted from Colin O'Flynn's DSA815 module (github.com/colinoflynn/dsa815)
 
 Author: Greg d'Eon
-Date: May 3
+Date: May 3-4, 2016
 '''
-
-"""
-TODO:
-- Pick good settings
-- Add measurement methods
-- Test with XY scanning
-"""
 
 import numpy
 import visa
@@ -119,6 +112,40 @@ class DSA815(object):
 		self.inst.write(":SENS:BAND:RES {}".format(RBW))
 		
 	
+	def enable_RF(self, state):
+		"""
+		Turn the RF preamp on or off.
+		
+		Args:
+			state: True to enable the preamp
+		"""
+		
+		if state:
+			state_s = "1"
+		else:
+			state_s = "0"
+			
+		self.inst.write(":SENSE:POWER:RF:GAIN:STATE {}".format(state_s))
+		
+	def set_input_atten(self, atten):
+		"""
+		Set the value of the input attenuation, in dB.
+		
+		Args:
+			atten (integer): The new attenuation, in the range [0, 30] dB.
+		
+		Raises:
+			ValueError: if the attenuation level is not in the range [0, 30]
+			TypeError: if the attenuation level is not an integer
+		"""
+		
+		if atten < 0 or atten > 30:
+			raise ValueError("Input attenuation must be between 0 and 30 dB")
+		if not isinstance(atten, (int, long)):
+			raise TypeError("Attenuation level must be an integer")
+		
+		self.inst.write(":SENSE:POWER:RF:ATT {}".format(atten))
+	
 	# Measurements
 	def measure_trace(self):
 		"""
@@ -164,12 +191,13 @@ if __name__ == '__main__':
 	
 	print "Configuring..."
 	test.TG_enable(False)
-	test.set_freq_limits(50e6, 250e6)
+	test.enable_RF(True)
+	test.set_input_atten(0)
+	test.set_freq_limits(1e6, 601e6)
 	test.set_RBW(10e3)
 	
 	print("Measuring...")
 	
-	freq, amp = test.measure_trace()
-	print freq
+	amp = test.measure_trace()
 	print amp
 	

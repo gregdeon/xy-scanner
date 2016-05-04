@@ -4,7 +4,7 @@ Uses a DSA815 with a loop antenna probe attached to an M3D printer head
 to scan for EM signals over the surface of the chip.
 
 Author: Greg d'Eon
-Date: May 3, 2016
+Date: May 3-4, 2016
 '''
 
 # Controllers
@@ -53,9 +53,11 @@ if __name__ == '__main__':
 	# Scan boundaries, in mm
 	# TODO: make sure max doesn't have to be a multiple of step
 	x_max = 20
-	y_max = 20
+	y_max = 30
 	x_step = 5
-	y_step = 1
+	y_step = 2
+	
+	
 	x_steps = int(math.ceil(x_max / x_step))
 	y_steps = int(math.ceil(y_max / y_step))
 	
@@ -67,9 +69,9 @@ if __name__ == '__main__':
 	
 	
 	# Scan frequencies, in Hz
-	f_low = 80e6
-	f_hi  = 120e6
-	RBW   = 10e3
+	f_low = 1e6
+	f_hi  = 601e6
+	RBW   = 30e3
 	num_freqs = 601	# This seems to be fixed for the DSA815
 	
 	# DSA815 controller
@@ -77,12 +79,13 @@ if __name__ == '__main__':
 	scope.conn("USB0::0x1AB1::0x0960::DSA8A134700016::INSTR")	
 	scope.set_freq_limits(f_low, f_hi)
 	scope.set_RBW(RBW)
+	scope.enable_RF(True)
+	scope.set_input_atten(0)
 	
 	
 	# 3D list for scan result data
 	# scanData[x][y][f] is data at position (x, y) and frequency f
 	# (ie: one output from DSA is scanData[x][y])
-	# TODO: remove magic number
 	scanData = [[[0 for k in range(num_freqs+1)] 
 				for j in range(y_steps)] 
 				for i in range(x_steps)]
