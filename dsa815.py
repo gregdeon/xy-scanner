@@ -173,11 +173,6 @@ class DSA815(object):
 		dataList = dataString.split(", ")
 		dataList[0] = dataList[0].split()[1]
 		amplitudes = [float(i) for i in dataList]
-		
-		# Also, find the frequencies
-		#f_min = int(self.inst.query(":SENSE:FREQ:START?"))
-		#f_max = int(self.inst.query(":SENSE:FREQ:STOP?"))
-		#freq = numpy.linspace(f_min, f_max, len(amplitudes))
 
 		return amplitudes
 

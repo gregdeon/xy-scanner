@@ -50,16 +50,15 @@ def plotHeatmap(data, x_min, x_max, y_min, y_max, filename):
 # Main script
 if __name__ == '__main__':
 
-	# Scan boundaries, in mm
-	# TODO: make sure max doesn't have to be a multiple of step
-	x_max = 20
-	y_max = 30
-	x_step = 5
-	y_step = 2
+	# Scan layout
+	x_step = 5		# Step size, in mm
+	y_step = 2		# Step size, in mm
+	x_steps = 2		# Number of steps to take
+	y_steps = 5		# Number of steps to take
 	
+	x_max = x_step * x_steps	# Size of the grid we're measuring
+	y_max = y_step * y_steps	# Note that we'll never reach x = x_max
 	
-	x_steps = int(math.ceil(x_max / x_step))
-	y_steps = int(math.ceil(y_max / y_step))
 	
 	# M3D controller
 	printer = M3D()
